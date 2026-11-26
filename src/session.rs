@@ -228,7 +228,7 @@ impl<FS: Filesystem> Session<FS> {
         acl: SessionACL,
         config: Config,
     ) -> io::Result<Self> {
-        let ch = Channel::new(Arc::new(DevFuse(File::from(fd))));
+        let ch = Channel::new(Arc::new(DevFuse::new(File::from(fd))));
         let mut session = Session {
             filesystem: FilesystemHolder {
                 fs: Some(filesystem),

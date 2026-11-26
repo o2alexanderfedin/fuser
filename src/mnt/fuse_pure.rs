@@ -207,7 +207,7 @@ fn receive_fusermount_message(socket: &UnixStream) -> Result<DevFuse, Error> {
                     if fd < 0 {
                         return Err(ErrorKind::InvalidData.into());
                     }
-                    return Ok(DevFuse(unsafe { File::from_raw_fd(fd) }));
+                    return Ok(DevFuse::new(unsafe { File::from_raw_fd(fd) }));
                 }
             }
             other => {

@@ -5,23 +5,36 @@ use std::os::fd::AsFd;
 use std::os::fd::AsRawFd;
 use std::os::fd::BorrowedFd;
 
-/// A newtype for `File` that represents the `/dev/fuse` device.
+use crate::channel::StreamSocket;
+
+/// The kernel connection of a mount: the `/dev/fuse` device, or a socket that stands in for it.
 #[derive(Debug)]
-pub(crate) struct DevFuse(pub(crate) File);
+pub(crate) struct DevFuse {
+    file: File,
+    /// Set when `file` is a stream socket rather than a device, as with FUSE-T
+    pub(crate) stream_socket: Option<StreamSocket>,
+}
 
 impl AsRawFd for DevFuse {
     fn as_raw_fd(&self) -> std::os::unix::io::RawFd {
-        self.0.as_raw_fd()
+        self.file.as_raw_fd()
     }
 }
 
 impl AsFd for DevFuse {
     fn as_fd(&self) -> BorrowedFd<'_> {
-        self.0.as_fd()
+        self.file.as_fd()
     }
 }
 
 impl DevFuse {
+    pub(crate) fn new(file: File) -> Self {
+        Self {
+            stream_socket: StreamSocket::detect(&file),
+            file,
+        }
+    }
+
     pub(crate) const PATH: &'static str = "/dev/fuse";
 
     #[allow(dead_code)] // Not used with every feature.
@@ -30,7 +43,7 @@ impl DevFuse {
             .read(true)
             .write(true)
             .open(Self::PATH)
-            .map(Self)
+            .map(Self::new)
             .map_err(open_error)
     }
 }

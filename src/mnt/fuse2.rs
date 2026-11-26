@@ -31,7 +31,7 @@ impl MountImpl {
                 |fd| *fd >= 0,
             )?;
             let file = unsafe { File::from_raw_fd(fd) };
-            Ok((Arc::new(DevFuse(file)), MountImpl { mountpoint }))
+            Ok((Arc::new(DevFuse::new(file)), MountImpl { mountpoint }))
         })
     }
 
