@@ -42,6 +42,9 @@ Bug fixes:
 * Allow `MountOption::AutoUnmount` with `SessionACL::Owner` when running as root, or with
   fusermount3 3.15 or later. It is still refused with older helpers for other users, since they
   leave the mount in place
+* macOS: fix large requests being dropped on FUSE-T, which hung the caller (for example `cp` of a
+  large file). FUSE-T connects over a stream socket, which can split a request or a reply, so
+  fuser now reads and writes each one whole there
 
 ## 0.19.0 - 2026-11-20
 

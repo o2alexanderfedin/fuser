@@ -5,11 +5,15 @@ use std::os::fd::AsFd;
 use std::os::fd::AsRawFd;
 use std::os::fd::BorrowedFd;
 
+use crate::channel::StreamSocket;
+
 /// The kernel connection of a mount: the `/dev/fuse` device, or on macOS an MFMount channel.
 #[derive(Debug)]
 pub(crate) struct DevFuse {
     /// For an MFMount channel, which has no fd, a placeholder that is not connected to it
     file: File,
+    /// Set when `file` is a stream socket rather than a device, as with FUSE-T
+    pub(crate) stream_socket: Option<StreamSocket>,
     #[cfg(fuser_macfuse_fskit)]
     pub(crate) mf_channel: Option<crate::mnt::mfmount::MfChannel>,
 }
@@ -29,6 +33,7 @@ impl AsFd for DevFuse {
 impl DevFuse {
     pub(crate) fn new(file: File) -> Self {
         Self {
+            stream_socket: StreamSocket::detect(&file),
             file,
             #[cfg(fuser_macfuse_fskit)]
             mf_channel: None,
@@ -45,6 +50,7 @@ impl DevFuse {
     pub(crate) fn from_mf_channel(channel: crate::mnt::mfmount::MfChannel) -> io::Result<Self> {
         Ok(Self {
             file: File::open("/dev/null")?,
+            stream_socket: None,
             mf_channel: Some(channel),
         })
     }
